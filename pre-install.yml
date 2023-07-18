@@ -1,0 +1,59 @@
+- name: Pre-Install Packages
+  hosts: managed
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - npm
+          - nodejs
+          - git
+          - pwgen
+          - unzip
+          - python3-virtualenv
+          - python3-pip
+        state: present
+
+    - name: add GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is started
+      service:
+        name: docker
+        state: started
+
+    - name: Add student user to docker group
+      user:
+        name: student
+        groups: docker
+        append: yes
+
+    - name: Set permissions on /var/run/docker.sock
+      file:
+        path: /var/run/docker.sock
+        mode: '0666'
+        state: touch
+
+    - name: Install Docker Compose
+      pip:
+        name: docker-compose
+        executable: pip3
+
